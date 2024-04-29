@@ -1,0 +1,3 @@
+[submodule "taskapp/official"]
+	path = taskapp/official
+	url = https://github.com/gihyodocker/taskapp.git

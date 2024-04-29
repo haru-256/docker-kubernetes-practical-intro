@@ -1,0 +1,8 @@
+database:
+    host: mysql
+    username: taskapp_user
+    password: W89xtqdG8cSgrNY1
+    dbname: taskapp
+    maxIdleConns: 5
+    maxOpenConns: 10
+    connMaxLifetime: 1h0m0s
