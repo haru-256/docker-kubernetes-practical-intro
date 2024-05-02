@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+  namespace: taskapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      # ② assetsディレクトリをボリュームにコピーするためのInitコンテナ
+      initContainers:
+        - name: init
+          # ②-1 Webサーバの完成イメージを利用
+          image: ghcr.io/gihyodocker/taskapp-web:v1.0.0
+          # ②-3 ボリュームマウントされたディレクトリにコピー
+          command:
+            - "sh"
+            - "-c"
+            - "cp -r /go/src/github.com/gihyodocker/taskapp/assets/* /var/www/assets"
+          # ②-2 ボリュームをマウント
+          volumeMounts:
+            - name: assets-volume
+              mountPath: "/var/www/assets"
+      containers:
+        # ③ サイドカーであるリバースプロキシコンテナを定義
+        - name: nginx-web
+          image: ghcr.io/gihyodocker/taskapp-nginx-web:v1.0.0
+          env:
+            - name: NGINX_PORT
+              value: "80"
+            - name: SERVER_NAME
+              value: "localhost"
+            - name: ASSETS_DIR
+              value: "/var/www/assets"
+            - name: BACKEND_HOST
+              value: "localhost:8280"
+            - name: BACKEND_MAX_FAILS
+              value: "3"
+            - name: BACKEND_FAIL_TIMEOUT
+              value: "10s"
+          # ①-2 ボリュームをマウント
+          volumeMounts:
+            - name: assets-volume
+              mountPath: "/var/www/assets"
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+          startupProbe:
+            exec:
+              command: ["test", "-n", "$(ls -A /var/www/assets)"]
+          livenessProbe:
+            httpGet:
+              path: /assets/bootstrap.min.css
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        # ④ Webサーバのコンテナを定義
+        - name: web
+          image: ghcr.io/gihyodocker/taskapp-web:v1.0.0
+          ports:
+            - containerPort: 8280
+          args:
+            - "server"
+            - "--api-address=http://api:80"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8280
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8280
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      # ①-1 Pod内で共有できるボリュームを作成
+      volumes:
+        - name: assets-volume
+          emptyDir: {}
+
+---
+# ⑤ WebサーバのPodへトラフィックを流すService
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app: web
+  namespace: taskapp
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: web
+
+---
+# ⑥ Serviceを公開するためのIngress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  labels:
+    app: web
+  namespace: taskapp
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
