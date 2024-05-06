@@ -10,4 +10,8 @@ terraform {
       version = "~>5.27.0"
     }
   }
+
+  backend "gcs" {
+    bucket = "haru256-sandbox-20240502-tfstate"
+  }
 }
