@@ -37,6 +37,29 @@ resource "google_compute_subnetwork" "gke" {
   ]
 }
 
+# nodeはglobal ipを持たないため、NATを作成する
+resource "google_compute_router" "gke" {
+  name    = var.router_name
+  region  = google_compute_subnetwork.gke.region
+  network = google_compute_network.gke.id
+
+  bgp {
+    asn = 64514
+  }
+}
+resource "google_compute_router_nat" "gke" {
+  name                               = var.nat_name
+  router                             = google_compute_router.gke.name
+  region                             = google_compute_router.gke.region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
+}
+
 # GKE cluster(Autopilot)
 # 以下を参考に設定を行う
 # https://zenn.dev/btc4043/articles/28f4b326b04762#gke-%E3%82%AF%E3%83%A9%E3%82%B9%E3%82%BF%EF%BC%88autopilot%E3%83%A2%E3%83%BC%E3%83%89%EF%BC%89
@@ -47,8 +70,8 @@ resource "google_compute_subnetwork" "gke" {
 resource "google_container_cluster" "sandbox" {
   name = var.gke_cluster_name
 
-  enable_autopilot = true
-  location         = var.gcp_region
+  enable_autopilot    = true
+  location            = var.gcp_region
   deletion_protection = false
 
   release_channel {
@@ -65,7 +88,9 @@ resource "google_container_cluster" "sandbox" {
   subnetwork = google_compute_subnetwork.gke.self_link
 
   private_cluster_config {
-    enable_private_nodes    = true
+    # クラスタのノードに外部 IP アドレスを付与しない
+    enable_private_nodes = true
+    # cluster (=master node) が外部ipをもつようにする = 外部からアクセスできるようにする
     enable_private_endpoint = false
     master_ipv4_cidr_block  = "192.168.100.0/28"
 
@@ -110,6 +135,6 @@ resource "google_container_cluster" "sandbox" {
   # https://github.com/hashicorp/terraform-provider-google/issues/12064
   # https://dev.classmethod.jp/articles/note-about-terraform-ignore-changes
   lifecycle {
-    ignore_changes = [ node_config["reservation_affinity"] ]
+    ignore_changes = [node_config["reservation_affinity"]]
   }
 }

@@ -14,6 +14,13 @@ echo:
 plan: # terraform plan
 	terraform plan
 
+destroy: # terraform destroy chargeable resources for gke
+	terraform destroy \
+		-target=module.gke.google_container_cluster.sandbox \
+		-target=module.gke.google_compute_router_nat.gke \
+		-target=module.gke.google_compute_router.gke
+
+
 apply: # terraform apply
 	terraform apply
 

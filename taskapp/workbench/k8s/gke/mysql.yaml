@@ -37,6 +37,13 @@ spec:
             - name: mysql-secret
               mountPath: /var/run/secrets/mysql
               readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
       volumes:
         - name: mysql-secret
           secret:

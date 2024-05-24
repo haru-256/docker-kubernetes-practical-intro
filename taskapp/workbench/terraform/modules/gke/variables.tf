@@ -18,6 +18,16 @@ variable "vpc_subnetwork_name" {
   description = "The name of the VPC sub network"
 }
 
+variable "router_name" {
+  type        = string
+  description = "The name of the router"
+}
+
+variable "nat_name" {
+  type        = string
+  description = "The name of the NAT"
+}
+
 variable "gke_cluster_name" {
   type        = string
   description = "The name of the GKE cluster"

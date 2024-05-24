@@ -17,4 +17,6 @@ module "gke" {
   gcp_region          = var.gcp_default_region
   vpc_network_name    = "gke-sandbox"
   vpc_subnetwork_name = "gke-sandbox-${var.gcp_default_region}"
+  router_name         = "gke-sandbox"
+  nat_name            = "gke-sandbox"
 }

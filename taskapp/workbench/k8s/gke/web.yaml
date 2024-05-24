@@ -125,26 +125,3 @@ spec:
       targetPort: 80
   selector:
     app: web
-
----
-# ⑥ Serviceを公開するためのIngress
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: web
-  labels:
-    app: web
-  namespace: taskapp
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: localhost
-      http:
-        paths:
-          - pathType: Prefix
-            path: /
-            backend:
-              service:
-                name: web
-                port:
-                  number: 80
