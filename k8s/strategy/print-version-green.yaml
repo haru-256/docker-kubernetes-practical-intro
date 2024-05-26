@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: strategy
+  name: print-version-green
+  labels:
+    app: print-version
+    color: green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: print-version
+      color: green
+  template:
+    metadata:
+      labels:
+        app: print-version
+        color: green
+    spec:
+      containers:
+        - name: print-version
+          image: ghcr.io/gihyodocker/print-version:v0.0.2
+          ports:
+            - containerPort: 8080
