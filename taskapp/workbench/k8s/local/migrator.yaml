@@ -6,6 +6,10 @@ metadata:
     app: migrator
   namespace: taskapp
 spec:
+  # リトライ回数の上限（デフォルトは6）
+  backoffLimit: 3
+  # 以下の時間を過ぎたら、成功・失敗に関わらずJobを強制終了する設定（無限ループ防止の保険）
+  activeDeadlineSeconds: 600
   template:
     metadata:
       labels:
@@ -41,4 +45,4 @@ spec:
         - name: mysql-secret
           secret:
             secretName: mysql
-      restartPolicy: Never
+      restartPolicy: Never # 失敗時にPodを新規に作成して実行

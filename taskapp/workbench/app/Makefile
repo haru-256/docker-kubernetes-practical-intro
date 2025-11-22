@@ -21,7 +21,7 @@ ROOT_PACKAGE := github.com/gihyodocker/taskapp
 
 .PHONY: install-tools
 install-tools:
-	@sh hack/install-tools.sh
+	mise install
 
 .PHONY: tidy
 tidy:

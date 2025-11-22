@@ -9,5 +9,5 @@ spec:
   selector:
     app: echo
   ports:
-    - port: 80
-      # name: http
+    - name: http
+      port: 80

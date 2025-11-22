@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: mysql
-  serviceName: mysql
+  serviceName: mysql # 名前解決用のHeadless Service名を指定
   replicas: 1
   template:
     metadata:
@@ -35,13 +35,13 @@ spec:
             - name: mysql-data
               mountPath: /var/lib/mysql
             - name: mysql-secret
-              mountPath: /var/run/secrets/mysql
+              mountPath: /var/run/secrets/mysql # secret内のkeyがファイル名になる
               readOnly: true
       volumes:
         - name: mysql-secret
           secret:
             secretName: mysql
-  volumeClaimTemplates:
+  volumeClaimTemplates: # podごとにPersistentVolumeClaimを作成する
     - metadata:
         name: mysql-data
       spec:
