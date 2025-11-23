@@ -15,28 +15,26 @@ resource "google_compute_network" "gke" {
   auto_create_subnetworks = false
   routing_mode            = "REGIONAL"
 }
-
 # Subnet1(asia-northeast1)
 # 以下のノード、Pod、Service の IP アドレス範囲の概要を参照しながら必要なip address範囲を設定する
 # https://cloud.google.com/kubernetes-engine/docs/concepts/alias-ips?hl=ja#cluster_sizing
 resource "google_compute_subnetwork" "gke" {
   name          = var.vpc_subnetwork_name
-  ip_cidr_range = "10.16.0.0/12"
+  ip_cidr_range = "10.0.0.0/22" // ノード1の用のプライマリ, 1024 addresses
   region        = var.gcp_region
   network       = google_compute_network.gke.id
 
-  secondary_ip_range = [
-    {
-      range_name    = "pods"
-      ip_cidr_range = "10.32.0.0/14"
-    },
-    {
-      range_name    = "services"
-      ip_cidr_range = "10.48.0.0/20"
-    }
-  ]
+  secondary_ip_range {
+    range_name    = "pods"
+    ip_cidr_range = "10.4.0.0/20" // Pod用, 4096 addresses
+  }
+  secondary_ip_range {
+    range_name    = "services"
+    ip_cidr_range = "10.8.0.0/22" // Service用, 1024 addresses
+  }
 }
 
+# Cloud NAT
 # nodeはglobal ipを持たないため、NATを作成する
 resource "google_compute_router" "gke" {
   name    = var.router_name
@@ -80,17 +78,18 @@ resource "google_container_cluster" "sandbox" {
 
   networking_mode = "VPC_NATIVE"
   ip_allocation_policy {
-    cluster_secondary_range_name  = google_compute_subnetwork.gke.secondary_ip_range[0].range_name
-    services_secondary_range_name = google_compute_subnetwork.gke.secondary_ip_range[1].range_name
+    cluster_secondary_range_name  = "pods"
+    services_secondary_range_name = "services"
   }
-
   network    = google_compute_network.gke.self_link
   subnetwork = google_compute_subnetwork.gke.self_link
 
   private_cluster_config {
-    # クラスタのノードに外部 IP アドレスを付与しない
+    # ワーカーノードにはGlobal IPを持たせない (NAT経由で外に出る)
     enable_private_nodes = true
-    # cluster (=master node) が外部ipをもつようにする = 外部からアクセスできるようにする
+    # コントロールプレーン(Master)のGlobal IPは有効化する
+    # false = Global IPあり (手元のPCからkubectlできる)
+    # true  = Global IPなし (踏み台サーバーやVPNが必要)
     enable_private_endpoint = false
     master_ipv4_cidr_block  = "192.168.100.0/28"
 
@@ -99,15 +98,21 @@ resource "google_container_cluster" "sandbox" {
     }
   }
 
-  # 外部からのアクセスを許可しないためには以下の設定が必要
-  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster#master_authorized_networks_config
-  # master_authorized_networks_config {
-  # }
+  # 本番時は以下のように設定することを推奨
+  # 1. enable_private_endpoint=true: グローバルIPでコントロールプレーンに接続させない
+  # 2. さらにmaster_authorized_networks_configでVPC内の特定のIP範囲を持つVMだけアクセスできるようにする
+  master_authorized_networks_config {
+    cidr_blocks {
+      cidr_block   = "0.0.0.0/0"
+      display_name = "any-for-sandbox"
+    }
+  }
 
   maintenance_policy {
     recurring_window {
-      start_time = "2022-04-29T17:00:00Z"
-      end_time   = "2022-04-29T21:00:00Z"
+      # 現在に近い日付に更新 (例: 2025年)
+      start_time = "2025-01-01T17:00:00Z"
+      end_time   = "2025-01-01T21:00:00Z"
       recurrence = "FREQ=WEEKLY;BYDAY=FR,SA,SU"
     }
   }
@@ -119,10 +124,10 @@ resource "google_container_cluster" "sandbox" {
     # autopilotはdefault でworkload identityが設定されるため不要だろう。しかし、設定しなけばtrivyのlint errorが発生する
     # https://avd.aquasec.com/misconfig/google/gke/avd-gcp-0057/
     workload_metadata_config {
-      mode = "GCE_METADATA"
+      mode = "GKE_METADATA"
     }
-
   }
+
   # autopilotはdefault でworkload identityが設定されるため設定不要。設定すると以下のようなエラーが発生する
   # "workload_identity_config": conflicts with enable_autopilot
   # workload_identity_config {
