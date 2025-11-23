@@ -1,14 +1,3 @@
-# allow to use the google cloud service api
-resource "google_project_service" "services" {
-  for_each = toset([
-    "compute.googleapis.com", "container.googleapis.com", "storage.googleapis.com"
-  ])
-
-  project            = var.gcp_project_id
-  service            = each.value
-  disable_on_destroy = true
-}
-
 # VPC
 resource "google_compute_network" "gke" {
   name                    = var.vpc_network_name

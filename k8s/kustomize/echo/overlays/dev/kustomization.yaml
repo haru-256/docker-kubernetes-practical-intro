@@ -9,13 +9,6 @@ patches:
     target:
       group: gateway.networking.k8s.io
       version: v1
-  - target: # 直接patch内容を指定する方法
-      kind: Namespace
-      name: echo
-    patch: |-
-      - op: replace
-        path: /metadata/name
-        value: echo-dev
 
 configMapGenerator:
   - name: nginx-config
