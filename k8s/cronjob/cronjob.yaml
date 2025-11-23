@@ -8,6 +8,7 @@ metadata:
 spec:
   schedule: "*/1 * * * *"
   timeZone: Asia/Tokyo
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 5
   failedJobsHistoryLimit: 5
   suspend: true

@@ -19,3 +19,10 @@ spec:
             echo "[`date`] $VERSION"
             sleep 1
           done
+      resources:
+        requests:
+          cpu: 100m
+          memory: 100Mi
+        limits:
+          cpu: 100m
+          memory: 100Mi

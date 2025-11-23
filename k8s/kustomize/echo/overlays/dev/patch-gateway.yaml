@@ -1,0 +1,7 @@
+# - op: replace
+#   path: /spec/gatewayClassName
+#   value: gke-l7-global-external-managed
+- op: add
+  path: /spec/hostnames
+  value:
+    - localhost

@@ -3,8 +3,9 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - deployment.yaml
-  - ingress.yaml
   - service.yaml
+  # - ingress.yaml
+  - gateway.yaml
 labels:
   - includeSelectors: true
     pairs:

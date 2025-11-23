@@ -5,23 +5,25 @@ resources:
   - ../../base
 patches:
   - path: patch-deployment.yaml
-  - path: patch-ingress.yaml
+  - path: patch-gateway.yaml
     target:
-      kind: Ingress
-      name: echo
-  - target:
+      group: gateway.networking.k8s.io
+      version: v1
+  - target: # 直接patch内容を指定する方法
       kind: Namespace
-      name: default
+      name: echo
     patch: |-
       - op: replace
         path: /metadata/name
         value: echo-dev
+
 configMapGenerator:
   - name: nginx-config
     literals:
       - SERVER_NAME=localhost
     options:
-      disableNameSuffixHash: true
+      disableNameSuffixHash: false # ハッシュ値を付与することで、ConfigMap 更新時にPodの再起動を促す
+
 images:
   - name: nginx
     newName: ghcr.io/gihyodocker/simple-nginx-proxy
