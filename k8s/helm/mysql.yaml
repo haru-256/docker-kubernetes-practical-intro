@@ -1,5 +1,13 @@
+image:
+  registry: docker.io
+  # bitnami/mysql は2025/08に無料イメージの提供を終了したので、legacyイメージを使用する
+  # https://medium.com/@PlanB./bitnamis-62k-shock-why-devs-are-jumping-ship-8e8338d8ca08
+  # https://biggo.jp/news/202507200133_Broadcom_Restricts_Bitnami_Behind_Paywall
+  # https://hub.docker.com/r/bitnami/mysql
+  repository: bitnamilegacy/mysql
+
 auth:
   rootPassword: root_password
   database: ch08
   username: gihyo
-  passwaord: gihyo_password
+  password: gihyo_password
