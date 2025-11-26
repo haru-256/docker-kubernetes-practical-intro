@@ -1,0 +1,18 @@
+{{- if .Values.httpRoute.enabled -}}
+{{- $fullName := include "echo.fullname" . -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "echo.labels" . | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gateway.gatewayClassName }}
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: {{ .Values.gateway.port }}
+      allowedRoutes:
+        namespaces:
+          from: Same # 同じNamespace (echo) 内のRouteのみ許可
+{{- end }}

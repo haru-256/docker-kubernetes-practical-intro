@@ -1,0 +1,3 @@
+httpRoute:
+  hostnames:
+    - ch08-echo.gihyo.local
